@@ -74,9 +74,13 @@
     <Compile Include="ChatterProxyService.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ChatterService\ChatterService.csproj">
+    <ProjectReference Include="..\ChatterRestService\ChatterRestService.csproj">
+      <Project>{AB57594A-1B74-4D14-A9D4-73E01A0F485B}</Project>
+      <Name>ChatterRestService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ChatterService\ChatterSoapService.csproj">
       <Project>{2B6DAD87-88CE-4870-85F7-159BE78ADE05}</Project>
-      <Name>ChatterService</Name>
+      <Name>ChatterSoapService</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

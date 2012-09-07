@@ -1,14 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using ChatterService.Model;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-using System.Web.Caching;
-using System.Net;
-using System.Data;
-using System.Configuration;
 using RestSharp;
 
 namespace ChatterService

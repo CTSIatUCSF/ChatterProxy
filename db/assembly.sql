@@ -1,4 +1,4 @@
-ALTER DATABASE Profiles SET TRUSTWORTHY ON
+ALTER DATABASE profiles_100810 SET TRUSTWORTHY ON
 
 exec sp_configure 'clr enable', 1
 GO
@@ -22,15 +22,15 @@ FROM 'C:\WINDOWS\MICROSOFT.NET\FRAMEWORK64\V2.0.50727\SYSTEM.WEB.DLL'
 WITH PERMISSION_SET = UNSAFE
 GO
 
-CREATE ASSEMBLY ChatterService
+CREATE ASSEMBLY ChatterSoapService
 AUTHORIZATION dbo
-FROM 'C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\ChatterService.dll'
+FROM 'C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\ChatterSoapService.dll'
 WITH PERMISSION_SET = UNSAFE
 GO
 
-CREATE ASSEMBLY [ChatterService.XmlSerializers]
+CREATE ASSEMBLY [ChatterSoapService.XmlSerializers]
 AUTHORIZATION dbo
-FROM 'C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\ChatterService.XmlSerializers.dll'
+FROM 'C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\ChatterSoapService.XmlSerializers.dll'
 WITH PERMISSION_SET = UNSAFE
 GO
 
@@ -45,7 +45,7 @@ CREATE PROCEDURE usp_CreateChatterActivity
 @PMID int,
 @title nvarchar(255),
 @body nvarchar(255)
-AS EXTERNAL NAME ChatterService.[ChatterService.ChatterSqlProcedures].CreateActivity
+AS EXTERNAL NAME ChatterSoapService.[ChatterService.ChatterSqlProcedures].CreateActivity
 GO
 
 

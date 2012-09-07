@@ -18,9 +18,10 @@ using System.Threading;
 
 namespace ChatterService.Web
 {
-    public class CreateResult {
+    public class CommonResult {
         public bool Success {get; set;}
-        public string ErrorMessage {get; set;}
+        public bool Following { get; set; }
+        public string ErrorMessage { get; set; }
     }
 
     [ServiceContract(Name = "ChatterProxyService")]
@@ -36,19 +37,19 @@ namespace ChatterService.Web
 
         [OperationContract]
         [WebInvoke(UriTemplate = "/group/new", Method = "POST", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
-        CreateResult CreateGroup(Stream stream);
+        CommonResult CreateGroup(Stream stream);
 
         [OperationContract]
         [WebGet(UriTemplate = "/user/{viewerId}/isfollowing/{ownerId}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
-        Boolean IsUserFollowing(string viewerId, string ownerId);
+        CommonResult IsUserFollowing(string viewerId, string ownerId);
 
         [OperationContract]
-        [WebGet(UriTemplate = "/follow/{viewerId}/{ownerId}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
-        Boolean Follow(string viewerId, string ownerId);
+        [WebGet(UriTemplate = "/user/{viewerId}/follow/{ownerId}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
+        CommonResult Follow(string viewerId, string ownerId);
 
         [OperationContract]
-        [WebGet(UriTemplate = "/unfollow/{viewerId}/{ownerId}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
-        Boolean Unfollow(string viewerId, string ownerId);
+        [WebGet(UriTemplate = "/user/{viewerId}/unfollow/{ownerId}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
+        CommonResult Unfollow(string viewerId, string ownerId);
     }
 
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single,
@@ -140,18 +141,18 @@ namespace ChatterService.Web
             return result;
         }
 
-        public CreateResult CreateGroup(Stream stream)
+        public CommonResult CreateGroup(Stream stream)
         {
             NameValueCollection p = parseParameters(stream);
 
             if (string.IsNullOrEmpty(p["name"]))
             {
-                return new CreateResult() { Success = false, ErrorMessage = "Group name is required."};
+                return new CommonResult() { Success = false, ErrorMessage = "Group name is required." };
             }
 
             if (string.IsNullOrEmpty(p["ownerId"]))
             {
-                return new CreateResult() { Success = false, ErrorMessage = "OwnerId is required." };
+                return new CommonResult() { Success = false, ErrorMessage = "OwnerId is required." };
             }
 
             try
@@ -193,11 +194,11 @@ namespace ChatterService.Web
                     }
                 }
 
-                return new CreateResult() { Success = true};
+                return new CommonResult() { Success = true };
             }
             catch (Exception ex)
             {
-                return new CreateResult() { Success = false, ErrorMessage = ex.Message};
+                return new CommonResult() { Success = false, ErrorMessage = ex.Message };
             }
 
         }
@@ -230,7 +231,7 @@ namespace ChatterService.Web
         }
 
         #region REST
-        public Boolean IsUserFollowing(string viewerId, string ownerId)
+        public CommonResult IsUserFollowing(string viewerId, string ownerId)
         {
             IProfilesServices profiles = new ProfilesServices();
             IChatterSoapService soap = new ChatterSoapService(url);
@@ -249,15 +250,15 @@ namespace ChatterService.Web
                 {
                     if (csub.subscriber != null && ssViewerId.Equals(csub.subscriber.id))
                     {
-                        return true;
+                        return new CommonResult() { Success = true, Following = true };
                     }
                 }
             }
 
-            return false;
+            return new CommonResult() { Success = true, Following = false };
         }
 
-        public Boolean Follow(string viewerId, string ownerId)
+        public CommonResult Follow(string viewerId, string ownerId)
         {
             IProfilesServices profiles = new ProfilesServices();
             IChatterSoapService soap = new ChatterSoapService(url);
@@ -269,10 +270,10 @@ namespace ChatterService.Web
             ChatterRestService rest = new ChatterRestService(url);
             rest.Login(clientId, grantType, clientSecret, userName, password);
             ChatterResponse cresp = rest.Follow(ssViewerId, ssOwnerId);
-            return true;
+            return new CommonResult() { Success = true, Following = true };
         }
 
-        public Boolean Unfollow(string viewerId, string ownerId)
+        public CommonResult Unfollow(string viewerId, string ownerId)
         {
             IProfilesServices profiles = new ProfilesServices();
             IChatterSoapService soap = new ChatterSoapService(url);
@@ -284,7 +285,7 @@ namespace ChatterService.Web
             ChatterRestService rest = new ChatterRestService(url);
             rest.Login(clientId, grantType, clientSecret, userName, password);
             ChatterResponse cresp = rest.Unfollow(ssViewerId, ssOwnerId);
-            return true;
+            return new CommonResult() { Success = true, Following = false };
         }
         #endregion
     }

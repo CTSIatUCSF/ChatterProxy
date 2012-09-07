@@ -33,12 +33,12 @@ namespace ChatterService
                 if (GetElementValue(xml, "{http://ns.opensocial.org/2008/opensocial}title").Contains("added"))
                 {
                     CreateExternalMessage(service, employeeId.Value, pmid.Value, articleTitle.Value, 
-                        "just added a new publiction in UCSF Profiles :" + articleTitle.Value + " " + journalTitle.Value);
+                        "just added a new publiction in UCSF Profiles in the journal: " + journalTitle.Value);
                 }
                 else
                 {
                     CreateExternalMessage(service, employeeId.Value, pmid.Value, articleTitle.Value, 
-                        "has a new publication listed in UCSF Profiles :" + articleTitle.Value + " " + journalTitle.Value);
+                        "has a new publication listed in UCSF Profiles in the journal: " + journalTitle.Value);
                 }
             }
         }

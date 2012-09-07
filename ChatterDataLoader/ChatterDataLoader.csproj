@@ -66,13 +66,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ChatterService\ChatterService.csproj">
-      <Project>{2B6DAD87-88CE-4870-85F7-159BE78ADE05}</Project>
-      <Name>ChatterService</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Profiles.dbml">
       <Generator>MSLinqToSQLGenerator</Generator>
       <LastGenOutput>Profiles.designer.cs</LastGenOutput>
@@ -90,6 +86,12 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ChatterService\ChatterSoapService.csproj">
+      <Project>{2B6DAD87-88CE-4870-85F7-159BE78ADE05}</Project>
+      <Name>ChatterSoapService</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

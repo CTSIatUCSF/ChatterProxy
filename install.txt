@@ -2,8 +2,8 @@
 2. Add "chatterFlag" column to shindig_activity table
     execute db\alt_shindig_activity.sql
 3. Configure .Net Assembly in MS SQL Server
-    - copy ChatterService.dll and ChatterService.XmlSerializers.dll to any directory on database server
-    - change paths in db\assembly.sql to point to correct location of the ChatterService DLLs
+    - copy ChatterSoapService.dll and ChatterSoapService.XmlSerializers.dll to any directory on database server
+    - change paths in db\assembly.sql to point to correct location of the ChatterSoapService DLLs
     - execute db\assembly.sql
 4. Create sp_ExportActivitiesToChatter stored procedure 
     - execute sp_ExportActivitiesToChatter.sql
