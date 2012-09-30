@@ -15,10 +15,10 @@ namespace ChatterDataLoader
 
         Program()
         {
-            _url = ConfigurationSettings.AppSettings["services_url"];
-            _username = ConfigurationSettings.AppSettings["username"];
-            _password = ConfigurationSettings.AppSettings["password"];
-            _token = ConfigurationSettings.AppSettings["token"];
+            _url = ConfigurationSettings.AppSettings["SalesForceUrl"];
+            _username = ConfigurationSettings.AppSettings["SalesForceUserName"];
+            _password = ConfigurationSettings.AppSettings["SalesForcePassword"];
+            _token = ConfigurationSettings.AppSettings["SalesForceToken"];
         }
 
         static void Main(string[] args)

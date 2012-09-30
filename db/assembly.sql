@@ -50,5 +50,5 @@ GO
 
 
 --drop PROCEDURE usp_CreateChatterActivity
---drop ASSEMBLY [ChatterService.XmlSerializers]
---drop ASSEMBLY ChatterService
+--drop ASSEMBLY [ChatterSoapService.XmlSerializers]
+--drop ASSEMBLY ChatterSoapService

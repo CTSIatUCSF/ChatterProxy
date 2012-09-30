@@ -69,7 +69,7 @@ namespace ChatterService
             Url = url;
         }
 
-        public bool Login(string client_id, string grant_type, string client_secret, string username, string password)
+        public string Login(string client_id, string grant_type, string client_secret, string username, string password)
         {
             _client = new RestClient(Url);
 
@@ -81,10 +81,13 @@ namespace ChatterService
             request.AddParameter("password", password);
 
             /// execute the request
-
             _token = _client.Execute<OAuthToken>(request).Data;
-            //string content = _client.Execute(request).Content; // raw content as string
-            return true;
+            return _token.access_token;
+        }
+
+        public string GetAccessToken()
+        {
+            return _token != null ? _token.access_token : null;
         }
 
         public ChatterResponse GetFollowers(string userId)
@@ -126,7 +129,7 @@ namespace ChatterService
         {
             return MakeUserRestCall(userId, call, Method.GET, null);
         }
-        
+
         private ChatterResponse MakeUserRestCall(string userId, string call, RestSharp.Method method, Dictionary<string, string> postParams)
         {
             return MakeRestCall("users/" + userId + "/" + call, method, postParams);
@@ -149,6 +152,26 @@ namespace ChatterService
             //return content;
             ChatterResponse response = _client.Execute<ChatterResponse>(request).Data;
             return response;
+        }
+
+        public ChatterResponse GetNextPage(ChatterResponse resp)
+        {
+            if (resp.nextPageUrl != null)
+            {
+                String call = resp.nextPageUrl.Substring(resp.nextPageUrl.IndexOf("/chatter/") + 9);
+                return MakeRestCall(call, Method.GET, null);
+            }
+            return null;
+        }
+
+        public ChatterResponse GetPreviousPage(ChatterResponse resp)
+        {
+            if (resp.previousPageUrl != null)
+            {
+                String call = resp.nextPageUrl.Substring(resp.previousPageUrl.IndexOf("/chatter/") + 9);
+                return MakeRestCall(call, Method.GET, null);
+            }
+            return null;
         }
     }
 

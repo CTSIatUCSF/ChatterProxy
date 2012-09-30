@@ -36,12 +36,12 @@ namespace ChatterServiceTest
         }
 
         #region Additional test attributes
-        string _url = ConfigurationSettings.AppSettings["services_url"];
-        string _client_id = ConfigurationSettings.AppSettings["client_id"];
-        string _grant_type = ConfigurationSettings.AppSettings["grant_type"];
-        string _client_secret = ConfigurationSettings.AppSettings["client_secret"];
-        string _username = ConfigurationSettings.AppSettings["username"];
-        string _password = ConfigurationSettings.AppSettings["password"];
+        string _url = ConfigurationSettings.AppSettings["SalesForceUrl"];
+        string _client_id = ConfigurationSettings.AppSettings["SalesForceClientId"];
+        string _grant_type = ConfigurationSettings.AppSettings["SalesForceGrantType"];
+        string _client_secret = ConfigurationSettings.AppSettings["SalesForceClientSecret"];
+        string _username = ConfigurationSettings.AppSettings["SalesForceUserName"];
+        string _password = ConfigurationSettings.AppSettings["SalesForcePassword"];
         
 
         //
@@ -95,7 +95,7 @@ namespace ChatterServiceTest
         {
             ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url);
             service.Login(_client_id, _grant_type, _client_secret, _username, _password);
-            service.Follow("005A0000001X3Nb", "005A0000001X3gU");
+            service.Follow("005A0000001X3Nb", "005A0000001X2Yp");
         }
 
         [TestMethod]

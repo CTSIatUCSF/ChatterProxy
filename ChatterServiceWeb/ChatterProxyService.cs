@@ -22,10 +22,13 @@ namespace ChatterService.Web
         public bool Success {get; set;}
         public bool Following { get; set; }
         public string ErrorMessage { get; set; }
+        public int Total { get; set; }
+        public string AccessToken { get; set; }
+        public string URL { get; set; }
     }
 
     [ServiceContract(Name = "ChatterProxyService")]
-    public interface IChatterProxyService
+    public interface IChatterProxyService   
     {
         [OperationContract]
         [WebGet(UriTemplate = "/activities?count={count}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
@@ -40,16 +43,16 @@ namespace ChatterService.Web
         CommonResult CreateGroup(Stream stream);
 
         [OperationContract]
-        [WebGet(UriTemplate = "/user/{viewerId}/isfollowing/{ownerId}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
-        CommonResult IsUserFollowing(string viewerId, string ownerId);
+        [WebGet(UriTemplate = "/user/{viewerId}/isfollowing/{ownerId}?accessToken={accessToken}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
+        CommonResult IsUserFollowing(string viewerId, string ownerId, string accessToken);
 
         [OperationContract]
-        [WebGet(UriTemplate = "/user/{viewerId}/follow/{ownerId}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
-        CommonResult Follow(string viewerId, string ownerId);
+        [WebGet(UriTemplate = "/user/{viewerId}/follow/{ownerId}?accessToken={accessToken}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
+        CommonResult Follow(string viewerId, string ownerId, string accessToken);
 
         [OperationContract]
-        [WebGet(UriTemplate = "/user/{viewerId}/unfollow/{ownerId}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
-        CommonResult Unfollow(string viewerId, string ownerId);
+        [WebGet(UriTemplate = "/user/{viewerId}/unfollow/{ownerId}?accessToken={accessToken}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
+        CommonResult Unfollow(string viewerId, string ownerId, string accessToken);
     }
 
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single,
@@ -68,10 +71,11 @@ namespace ChatterService.Web
         readonly int cacheInterval;
         readonly int cacheCapacity;
         static bool initialized = false;
-        IChatterSoapService _service = null; 
         Timer activitiesFetcher;
         List<Activity> latestList = new List<Activity>();
         List<Activity> displayList = new List<Activity>();
+
+        IProfilesServices profilesService = null;
 
         public ChatterProxyService()
         {
@@ -89,74 +93,72 @@ namespace ChatterService.Web
 
         public Activity[] GetActivities(int count)
         {
-            lock (latestList)
+            try
             {
-                return latestList.Take(count).ToArray();
+                lock (latestList)
+                {
+                    return latestList.Take(count).ToArray();
+                }
+            }
+            catch (Exception e)
+            {
+                HandleError(e, url);
+                return null;
             }
         }
 
         public void GetActivities(Object stateInfo)
         {
-            // login if needed
-            lock (this)
+            IChatterSoapService soap = getChatterSoapService();
+            Activity lastActivity = latestList.Count > 0 ? latestList[0] : null;
+            List<Activity> newActivities = soap.GetProfileActivities(lastActivity, cacheCapacity);
+            if (newActivities.Count > 0)
             {
-                try 
+                lock (latestList)
                 {
-                    if (_service == null)
+                    latestList.AddRange(newActivities);
+                    latestList.Sort(new ActivitiesComparer());
+                    if (latestList.Count > cacheCapacity)
                     {
-                        _service = new ChatterSoapService(url);
-                        _service.Login(userName, password, token);
+                        latestList.RemoveRange(cacheCapacity, latestList.Count - cacheCapacity);
                     }
-                    Activity lastActivity = latestList.Count > 0 ? latestList[0] : null;
-                    List<Activity> newActivities = _service.GetProfileActivities(lastActivity, cacheCapacity);
-                    if (newActivities.Count > 0)
-                    {
-                        lock (latestList)
-                        {
-                            latestList.AddRange(newActivities);
-                            latestList.Sort(new ActivitiesComparer());
-                            latestList.RemoveRange(cacheCapacity, latestList.Count - cacheCapacity);
-                        }
-                    }
-                }
-                catch (Exception e) 
-                {
-                    _service = null;
                 }
             }
         }
 
         public Activity[] GetUserActivities(string userId, string mode, int count)
         {
-            IProfilesServices profiles = new ProfilesServices();
-            IChatterSoapService service = new ChatterSoapService(url);
-            service.Login(userName, password, token);
+            try {
+                IChatterSoapService soap = getChatterSoapService();
 
-            int personId = Int32.Parse(userId);
-            bool includeUserActivities = mode.Equals("all", StringComparison.InvariantCultureIgnoreCase);
+                bool includeUserActivities = mode.Equals("all", StringComparison.InvariantCultureIgnoreCase);
 
-            string employeeId = profiles.GetEmployeeId(personId);
-            var ssUserId = service.GetUserId(employeeId);
-            Activity[] result = service.GetActivities(ssUserId, personId, includeUserActivities, count).ToArray();
-            return result;
+                var ssUserId = getSalesforceUserId(userId);
+                Activity[] result = soap.GetActivities(ssUserId, Int32.Parse(userId), includeUserActivities, count).ToArray();
+                return result;
+            }
+            catch (Exception e)
+            {
+                HandleError(e, url);
+                return null;
+            }
         }
 
         public CommonResult CreateGroup(Stream stream)
         {
-            NameValueCollection p = parseParameters(stream);
+            try {
+                NameValueCollection p = parseParameters(stream);
 
-            if (string.IsNullOrEmpty(p["name"]))
-            {
-                return new CommonResult() { Success = false, ErrorMessage = "Group name is required." };
-            }
+                if (string.IsNullOrEmpty(p["name"]))
+                {
+                    return new CommonResult() { Success = false, ErrorMessage = "Group name is required." };
+                }
 
-            if (string.IsNullOrEmpty(p["ownerId"]))
-            {
-                return new CommonResult() { Success = false, ErrorMessage = "OwnerId is required." };
-            }
+                if (string.IsNullOrEmpty(p["ownerId"]))
+                {
+                    return new CommonResult() { Success = false, ErrorMessage = "OwnerId is required." };
+                }
 
-            try
-            {
                 int personId = Int32.Parse(p["ownerId"]);
                 string descr = p["description"];
                 if (string.IsNullOrEmpty(descr))
@@ -164,12 +166,10 @@ namespace ChatterService.Web
                     descr = p["name"];
                 }
 
-                IProfilesServices profiles = new ProfilesServices();
-                string employeeId = profiles.GetEmployeeId(personId);
+                string employeeId = profilesService.GetEmployeeId(personId);
 
-                IChatterSoapService service = new ChatterSoapService(url);
-                service.Login(userName, password, token);
-                string groupId = service.CreateGroup(p["name"], descr, employeeId);
+                IChatterSoapService soap = getChatterSoapService();
+                string groupId = soap.CreateGroup(p["name"], descr, employeeId);
 
                 string users = p["users"];
                 if(!string.IsNullOrEmpty(users)) {
@@ -179,7 +179,7 @@ namespace ChatterService.Web
                     {
                         try
                         {
-                            string eId = profiles.GetEmployeeId(Int32.Parse(pId));
+                            string eId = profilesService.GetEmployeeId(Int32.Parse(pId));
                             employeeList.Add(eId);
                         }
                         catch (Exception ex)
@@ -190,17 +190,17 @@ namespace ChatterService.Web
 
                     if (employeeList.Count > 0)
                     {
-                        service.AddUsersToGroup(groupId, employeeList.ToArray<string>());
+                        soap.AddUsersToGroup(groupId, employeeList.ToArray<string>());
                     }
                 }
 
-                return new CommonResult() { Success = true };
+                return new CommonResult() { Success = true, URL = url.Replace("/services", "/_ui/core/chatter/groups/GroupProfilePage?g=" + groupId)};
             }
             catch (Exception ex)
             {
+                HandleError(ex, url);
                 return new CommonResult() { Success = false, ErrorMessage = ex.Message };
             }
-
         }
 
         private NameValueCollection parseParameters(Stream stream) {
@@ -225,70 +225,160 @@ namespace ChatterService.Web
                 {
                     ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(customXertificateValidation);
                     activitiesFetcher = new Timer(GetActivities, null, 0, cacheInterval * 1000);
+                    profilesService = new ProfilesServices();
+                    getChatterSoapService();
                     initialized = true;
                 }
             }
         }
 
         #region REST
-        public CommonResult IsUserFollowing(string viewerId, string ownerId)
+        public CommonResult IsUserFollowing(string viewerId, string ownerId, string accessToken)
         {
-            IProfilesServices profiles = new ProfilesServices();
-            IChatterSoapService soap = new ChatterSoapService(url);
-            soap.Login(userName, password, token);
-
-            var ssOwnerId = soap.GetUserId(profiles.GetEmployeeId(Int32.Parse(ownerId)));
-            var ssViewerId = soap.GetUserId(profiles.GetEmployeeId(Int32.Parse(viewerId)));
-
-            ChatterRestService rest = new ChatterRestService(url);
-            rest.Login(clientId, grantType, clientSecret, userName, password);
-            ChatterResponse cresp = rest.GetFollowers(ssOwnerId);
-
-            if (cresp.followers != null)
+            try
             {
-                foreach (ChatterSubscription csub in cresp.followers)
+                var ssOwnerId = getSalesforceUserId(ownerId);
+                var ssViewerId = getSalesforceUserId(viewerId);
+
+                ChatterRestService rest = getChatterRestService(accessToken);
+                ChatterResponse cresp = rest.GetFollowers(ssOwnerId);
+                int total = cresp != null ? cresp.total : 0;
+
+                while (cresp != null && cresp.followers != null)
                 {
-                    if (csub.subscriber != null && ssViewerId.Equals(csub.subscriber.id))
+                    foreach (ChatterSubscription csub in cresp.followers)
                     {
-                        return new CommonResult() { Success = true, Following = true };
+                        if (csub.subscriber != null && ssViewerId.Equals(csub.subscriber.id))
+                        {
+                            return new CommonResult() { Success = true, Following = true, Total = total, AccessToken = rest.GetAccessToken() };
+                        }
                     }
+                    cresp = rest.GetNextPage(cresp);
                 }
+
+                return new CommonResult() { Success = true, Following = false, Total = total, AccessToken = rest.GetAccessToken() };
             }
-
-            return new CommonResult() { Success = true, Following = false };
+            catch (Exception ex)
+            {
+                HandleError(ex, accessToken);
+                return new CommonResult() { Success = false, ErrorMessage = ex.Message };
+            }
         }
 
-        public CommonResult Follow(string viewerId, string ownerId)
+        public CommonResult Follow(string viewerId, string ownerId, string accessToken)
         {
-            IProfilesServices profiles = new ProfilesServices();
-            IChatterSoapService soap = new ChatterSoapService(url);
-            soap.Login(userName, password, token);
+            try
+            {
+                var ssOwnerId = getSalesforceUserId(ownerId);
+                var ssViewerId = getSalesforceUserId(viewerId);
 
-            var ssOwnerId = soap.GetUserId(profiles.GetEmployeeId(Int32.Parse(ownerId)));
-            var ssViewerId = soap.GetUserId(profiles.GetEmployeeId(Int32.Parse(viewerId)));
-
-            ChatterRestService rest = new ChatterRestService(url);
-            rest.Login(clientId, grantType, clientSecret, userName, password);
-            ChatterResponse cresp = rest.Follow(ssViewerId, ssOwnerId);
-            return new CommonResult() { Success = true, Following = true };
+                ChatterRestService rest = getChatterRestService(accessToken);
+                ChatterResponse cresp = rest.Follow(ssViewerId, ssOwnerId);
+                return IsUserFollowing(viewerId, ownerId, accessToken);
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex, accessToken);
+                return new CommonResult() { Success = false, ErrorMessage = ex.Message };
+            }
         }
 
-        public CommonResult Unfollow(string viewerId, string ownerId)
+        public CommonResult Unfollow(string viewerId, string ownerId, string accessToken)
         {
-            IProfilesServices profiles = new ProfilesServices();
-            IChatterSoapService soap = new ChatterSoapService(url);
-            soap.Login(userName, password, token);
+            try
+            {
+                var ssOwnerId = getSalesforceUserId(ownerId);
+                var ssViewerId = getSalesforceUserId(viewerId);
 
-            var ssOwnerId = soap.GetUserId(profiles.GetEmployeeId(Int32.Parse(ownerId)));
-            var ssViewerId = soap.GetUserId(profiles.GetEmployeeId(Int32.Parse(viewerId)));
-
-            ChatterRestService rest = new ChatterRestService(url);
-            rest.Login(clientId, grantType, clientSecret, userName, password);
-            ChatterResponse cresp = rest.Unfollow(ssViewerId, ssOwnerId);
-            return new CommonResult() { Success = true, Following = false };
+                ChatterRestService rest = getChatterRestService(accessToken);
+                ChatterResponse cresp = rest.Unfollow(ssViewerId, ssOwnerId);
+                return IsUserFollowing(viewerId, ownerId, accessToken);
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex, accessToken);
+                return new CommonResult() { Success = false, ErrorMessage = ex.Message };
+            }
         }
         #endregion
-    }
 
+        private string getSalesforceUserId(string profilesId)
+        {
+            Object objUserId = HttpRuntime.Cache[profilesId];
+
+            if (objUserId == null)
+            {
+                IChatterSoapService soap = getChatterSoapService();
+                objUserId = soap.GetUserId(profilesService.GetEmployeeId(Int32.Parse(profilesId)));
+                HttpRuntime.Cache.Insert(profilesId, objUserId);
+            }
+            return Convert.ToString(objUserId);
+        }
+
+        private IChatterSoapService getChatterSoapService()
+        {
+            IChatterSoapService soap = (IChatterSoapService)HttpRuntime.Cache[url];
+            if (soap == null)
+            {
+                lock (this)
+                {
+                    soap = new ChatterSoapService(url);
+                    soap.Login(userName, password, token);
+                    HttpRuntime.Cache.Insert(url, soap);
+                }
+            }
+            return soap;
+        }
+
+        private ChatterRestService getChatterRestService(string accessToken)
+        {
+            ChatterRestService rest = accessToken !=  null && accessToken.Trim().Length > 0 ? (ChatterRestService)HttpRuntime.Cache[accessToken] : null;
+
+            if (rest == null)
+            {
+                rest = new ChatterRestService(url);
+                accessToken = rest.Login(clientId, grantType, clientSecret, userName, password);
+                HttpRuntime.Cache.Insert(accessToken, rest);
+            }
+            return rest;
+        }
+
+        #region IErrorHandler Members
+        public bool HandleError(Exception error, string key)
+        {
+            WriteLogToFile(error.Message);
+
+            // remove what we think may be stale
+            if (key != null && key.Trim().Length > 0)
+            {
+                HttpRuntime.Cache.Remove(key);
+            }
+            // Returning true indicates you performed your behavior. 
+            return true;
+        }
+        #endregion    
+
+        private void WriteLogToFile(String msg)
+        {
+            try
+            {
+
+                using (StreamWriter w = File.AppendText(AppDomain.CurrentDomain.BaseDirectory + "/ChatterProxyService.txt"))
+                {
+                    // write a line of text to the file
+                    w.WriteLine(msg);
+
+                    // close the stream
+                    w.Close();
+
+                }
+                //EventLog.WriteEntry("ProfilesAPI",
+                //  msg,
+                //EventLogEntryType.Information);
+
+            }
+            catch (Exception ex) { throw ex; }
+        }
+    }
    
 }

@@ -48,10 +48,10 @@ namespace ChatterServiceTest
         }
 
         #region Additional test attributes
-            string _url = ConfigurationSettings.AppSettings["services_url"];
-            string _username = ConfigurationSettings.AppSettings["username"];
-            string _password = ConfigurationSettings.AppSettings["password"];
-            string _token = ConfigurationSettings.AppSettings["token"];
+        string _url = ConfigurationSettings.AppSettings["SalesForceUrl"];
+        string _username = ConfigurationSettings.AppSettings["SalesForceUserName"];
+        string _password = ConfigurationSettings.AppSettings["SalesForcePassword"];
+        string _token = ConfigurationSettings.AppSettings["SalesForceToken"];
 
             string _employeeId = "025693078";
             string _userId = "005A0000001X3NbIAK";
@@ -199,7 +199,14 @@ namespace ChatterServiceTest
         {
             IChatterSoapService service = new ChatterService.ChatterSoapService(_url);
             service.Login(_username, _password, _token);
-            service.CreateGroup("Test API Group", "This group was created by unit test", _employeeId);
+            service.CreateGroup("aa1", "This group was created by unit test", _employeeId);
+            service.CreateGroup("aa2", "This group was created by\r\nunit test", _employeeId);
+            byte r = 0x000D;
+            byte n = 0x000A & 0x000A;
+            String two ="hello" + Convert.ToString(r) + "world" + r + "odd" + r + "" + n + "very" + r + n + "test";
+            String three ="hello" + Convert.ToString(r) + Convert.ToString(n) + "world";
+            service.CreateGroup("aa3", two, _employeeId);
+            service.CreateGroup("aa4", three, _employeeId);
         }
 
         [TestMethod]
@@ -211,6 +218,16 @@ namespace ChatterServiceTest
 
             service.AddUsersToGroup(id, new string[] { "020524930", "027639251" });
         }
+        
 
+        [TestMethod]
+        public void TestGetGroup()
+        {
+            IChatterSoapService service = new ChatterService.ChatterSoapService(_url);
+            service.Login(_username, _password, _token);
+            string id = "0F9Z000000007Zu";
+
+            Salesforce.CollaborationGroup group = service.GetCollaborationGroup(id);
+        }
     }
 }

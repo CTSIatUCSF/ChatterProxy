@@ -1,18 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <publishData>
-  <publishProfile publishUrl="Z:\chatter" deleteExistingFiles="False" ftpAnonymousLogin="False" ftpPassiveMode="True" msdeploySite="" msdeploySiteID="" msdeployRemoteSitePhysicalPath="" msdeployAllowUntrustedCertificate="False" msdeploySkipExtraFilesOnServer="True" msdeployMarkAsApp="False" profileName="ChatterFile" publishMethod="FileSystem" replaceMatchingFiles="True" userName="" savePWD="False" userPWD="" SelectedForPublish="True">
-    <file relUrl="Web.config" publishTime="09/07/2012 10:43:05" />
-    <file relUrl="bin/ChatterRestService.pdb" publishTime="09/07/2012 15:27:11" />
-    <file relUrl="bin/ChatterServiceWeb.dll" publishTime="09/07/2012 15:27:11" />
-    <file relUrl="bin/ChatterRestService.dll" publishTime="09/07/2012 15:27:11" />
-    <file relUrl="test.htm" publishTime="09/06/2012 10:16:49" />
-    <file relUrl="ChatterProxyService.svc" publishTime="09/06/2012 10:16:49" />
-    <file relUrl="bin/ChatterSoapService.dll" publishTime="09/07/2012 15:27:08" />
-    <file relUrl="testfollow.htm" publishTime="09/06/2012 10:16:49" />
-    <file relUrl="bin/RestSharp.xml" publishTime="08/31/2012 15:33:51" />
-    <file relUrl="bin/ChatterServiceWeb.pdb" publishTime="09/07/2012 15:27:11" />
-    <file relUrl="bin/ChatterSoapService.XmlSerializers.dll" publishTime="09/07/2012 15:27:10" />
+  <publishProfile publishUrl="Z:\chatter" deleteExistingFiles="True" ftpAnonymousLogin="False" ftpPassiveMode="True" msdeploySite="" msdeploySiteID="" msdeployRemoteSitePhysicalPath="" msdeployAllowUntrustedCertificate="False" msdeploySkipExtraFilesOnServer="True" msdeployMarkAsApp="False" profileName="ChatterFile" publishMethod="FileSystem" replaceMatchingFiles="False" userName="" savePWD="False" userPWD="" SelectedForPublish="True">
     <file relUrl="bin/RestSharp.dll" publishTime="08/31/2012 15:33:51" />
-    <file relUrl="bin/ChatterSoapService.pdb" publishTime="09/07/2012 15:27:08" />
+    <file relUrl="bin/ChatterServiceWeb.dll" publishTime="09/28/2012 14:45:24" />
+    <file relUrl="bin/ChatterSoapService.XmlSerializers.dll" publishTime="09/28/2012 14:36:36" />
+    <file relUrl="bin/ChatterRestService.pdb" publishTime="09/28/2012 14:36:36" />
+    <file relUrl="Web.config" publishTime="09/28/2012 14:54:04" />
+    <file relUrl="bin/ChatterSoapService.dll" publishTime="09/28/2012 14:36:31" />
+    <file relUrl="bin/ChatterServiceWeb.pdb" publishTime="09/28/2012 14:45:24" />
+    <file relUrl="ChatterProxyService.svc" publishTime="09/06/2012 10:16:49" />
+    <file relUrl="test.htm" publishTime="09/25/2012 15:03:17" />
+    <file relUrl="testfollow.htm" publishTime="09/25/2012 15:04:08" />
+    <file relUrl="bin/ChatterRestService.dll" publishTime="09/28/2012 14:36:37" />
+    <file relUrl="bin/ChatterSoapService.pdb" publishTime="09/28/2012 14:36:31" />
   </publishProfile>
 </publishData>

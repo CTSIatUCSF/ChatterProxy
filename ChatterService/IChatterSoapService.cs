@@ -66,5 +66,6 @@ namespace ChatterService
         string CreateGroup(String name, String description, string ownerEmployeeId);
         void AddUsersToGroup(String groupId, string[] users);
         void CreateExternalMessage(string url, string title, string body, string employeeId);
+        Salesforce.CollaborationGroup GetCollaborationGroup(string id);
     }
 }

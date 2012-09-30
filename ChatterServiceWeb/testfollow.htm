@@ -28,9 +28,20 @@
                     $("#main ul").append('<li><span> Leslie follow Eric : ' + data + '</span></li>');
                 },
                 error: function (jqXHR, textStatus, errorThrown) { alert(errorThrown); }
-            });         
+            });
 
-		});
+            $.ajax({
+                type: "GET",
+                url: "/ChatterProxyService.svc/user/5138614/isfollowing/4699897",
+                data: "{}",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                    $("#main ul").append('<li><span> Eric follow Cynthia : ' + data + '</span></li>');
+                },
+                error: function (jqXHR, textStatus, errorThrown) { alert(errorThrown); }
+            });
+        });
 	</script>         
 </head>
 <body>

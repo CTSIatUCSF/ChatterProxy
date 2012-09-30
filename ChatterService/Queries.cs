@@ -19,6 +19,11 @@ namespace ChatterService
             FROM User u WHERE u.ucsf_id__c = '{0}' 
             ORDER BY u.Id DESC LIMIT 1";
 
+        public const string SOQL_GET_GROUP = @"
+            SELECT g.Name, g.Description, g.OwnerId, g.CollaborationType 
+            FROM CollaborationGroup g WHERE g.Id = '{0}' 
+            ORDER BY g.Id DESC LIMIT 1";
+
         public const string SOQL_GET_PROFILE_ACTIVITIES = @"
             Select u.Type,  u.ParentId, u.Id, u.CreatedDate, u.CreatedById, Body, Title,
             Parent.User__r.Name, Parent.User__r.FirstName, Parent.User__r.LastName, Parent.User__r.UCSF_ID__c 

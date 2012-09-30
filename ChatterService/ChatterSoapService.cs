@@ -435,6 +435,16 @@ namespace ChatterService
             return GetObject<Salesforce.User>(Queries.SOQL_GET_USER, employeeId);
         }
 
+        public Salesforce.CollaborationGroup GetCollaborationGroup(string groupId)
+        {
+            if (string.IsNullOrEmpty(groupId))
+            {
+                throw new Exception("Group Id is required");
+            }
+
+            return GetObject<Salesforce.CollaborationGroup>(Queries.SOQL_GET_GROUP, groupId);
+        }
+
         protected Salesforce.Research_Profile__c GetResearchProfile(string employeeId)
         {
             if (string.IsNullOrEmpty(employeeId))
