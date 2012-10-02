@@ -42,6 +42,7 @@ namespace ChatterServiceTest
         string _client_secret = ConfigurationSettings.AppSettings["SalesForceClientSecret"];
         string _username = ConfigurationSettings.AppSettings["SalesForceUserName"];
         string _password = ConfigurationSettings.AppSettings["SalesForcePassword"];
+        bool _logService = Boolean.Parse(ConfigurationSettings.AppSettings["LogService"]);
         
 
         //
@@ -70,14 +71,14 @@ namespace ChatterServiceTest
         [TestMethod]
         public void TestRestLogin()
         {
-            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url);
+            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url, _logService);
             service.Login(_client_id, _grant_type, _client_secret, _username, _password);
         }
 
         [TestMethod]
         public void TestRestGetFollowers()
         {
-            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url);
+            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url, _logService);
             service.Login(_client_id, _grant_type, _client_secret, _username, _password);
             service.GetFollowers("005A0000001X3Nb");
         }
@@ -85,7 +86,7 @@ namespace ChatterServiceTest
         [TestMethod]
         public void TestRestGetFollowing()
         {
-            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url);
+            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url, _logService);
             service.Login(_client_id, _grant_type, _client_secret, _username, _password);
             service.GetFollowing("005A0000001X3Nb");
         }
@@ -93,7 +94,7 @@ namespace ChatterServiceTest
         [TestMethod]
         public void TestRestFollow()
         {
-            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url);
+            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url, _logService);
             service.Login(_client_id, _grant_type, _client_secret, _username, _password);
             service.Follow("005A0000001X3Nb", "005A0000001X2Yp");
         }
@@ -101,7 +102,7 @@ namespace ChatterServiceTest
         [TestMethod]
         public void TestRestUnfollow()
         {
-            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url);
+            ChatterService.ChatterRestService service = new ChatterService.ChatterRestService(_url, _logService);
             service.Login(_client_id, _grant_type, _client_secret, _username, _password);
             service.Unfollow("005A0000001X3Nb", "005A0000001X3gUIAS");
         }

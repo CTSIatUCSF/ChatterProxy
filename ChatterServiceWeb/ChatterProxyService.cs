@@ -70,7 +70,8 @@ namespace ChatterService.Web
         readonly string clientSecret;
         readonly int cacheInterval;
         readonly int cacheCapacity;
-        static bool initialized = false;
+        readonly bool logService;
+        bool initialized = false;
         Timer activitiesFetcher;
         List<Activity> latestList = new List<Activity>();
         List<Activity> displayList = new List<Activity>();
@@ -88,6 +89,7 @@ namespace ChatterService.Web
             clientSecret = ConfigurationSettings.AppSettings["SalesForceClientSecret"];
             cacheInterval = Int32.Parse(ConfigurationSettings.AppSettings["CacheInterval"]);
             cacheCapacity = Int32.Parse(ConfigurationSettings.AppSettings["cacheCapacity"]);
+            logService = Boolean.Parse(ConfigurationSettings.AppSettings["LogService"]);
             Init();
         }
 
@@ -248,7 +250,7 @@ namespace ChatterService.Web
                 {
                     foreach (ChatterSubscription csub in cresp.followers)
                     {
-                        if (csub.subscriber != null && ssViewerId.Equals(csub.subscriber.id))
+                        if (csub.subscriber != null && csub.subscriber.id.StartsWith(ssViewerId))
                         {
                             return new CommonResult() { Success = true, Following = true, Total = total, AccessToken = rest.GetAccessToken() };
                         }
@@ -285,6 +287,10 @@ namespace ChatterService.Web
 
         public CommonResult Unfollow(string viewerId, string ownerId, string accessToken)
         {
+            if (logService)
+            {
+                WriteLogToFile(viewerId + "/unfollow/" + ownerId + "?accessToken=" + accessToken);
+            }
             try
             {
                 var ssOwnerId = getSalesforceUserId(ownerId);
@@ -336,7 +342,7 @@ namespace ChatterService.Web
 
             if (rest == null)
             {
-                rest = new ChatterRestService(url);
+                rest = new ChatterRestService(url, logService);
                 accessToken = rest.Login(clientId, grantType, clientSecret, userName, password);
                 HttpRuntime.Cache.Insert(accessToken, rest);
             }
@@ -366,16 +372,13 @@ namespace ChatterService.Web
                 using (StreamWriter w = File.AppendText(AppDomain.CurrentDomain.BaseDirectory + "/ChatterProxyService.txt"))
                 {
                     // write a line of text to the file
-                    w.WriteLine(msg);
+                    w.WriteLine(DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss:ffff"));
+                    w.WriteLine("\t" + msg);
 
                     // close the stream
                     w.Close();
 
                 }
-                //EventLog.WriteEntry("ProfilesAPI",
-                //  msg,
-                //EventLogEntryType.Information);
-
             }
             catch (Exception ex) { throw ex; }
         }

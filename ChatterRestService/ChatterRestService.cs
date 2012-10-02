@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using RestSharp;
 
 namespace ChatterService
@@ -63,10 +64,12 @@ namespace ChatterService
         private String _userId;
         private OAuthToken _token;
         public string Url { get; set; }
+        private readonly bool logService;
 
-        public ChatterRestService(string url)
+        public ChatterRestService(string url, bool logService)
         {
             Url = url;
+            this.logService = logService;
         }
 
         public string Login(string client_id, string grant_type, string client_secret, string username, string password)
@@ -111,7 +114,7 @@ namespace ChatterService
         {
             // find the subscription for this relationship and then delete it
             ChatterResponse cresp = GetFollowing(viewerId);
-            if (cresp.following != null)
+            while (cresp != null && cresp.following != null)
             {
                 foreach (ChatterSubscription csub in cresp.following)
                 {
@@ -120,6 +123,7 @@ namespace ChatterService
                         return MakeRestCall("subscriptions/" + csub.id, Method.DELETE, null);
                     }
                 }
+                cresp = GetNextPage(cresp);
             }
 
             return cresp;
@@ -148,7 +152,12 @@ namespace ChatterService
                 }
             }
             /// execute the request
-            //string content = _client.Execute(request).Content; // raw content as string
+            if (logService)
+            {
+                string content = _client.Execute(request).Content; // raw content as string
+                WriteLogToFile(call + " : " + method);
+                WriteLogToFile(content);
+            }
             //return content;
             ChatterResponse response = _client.Execute<ChatterResponse>(request).Data;
             return response;
@@ -173,6 +182,26 @@ namespace ChatterService
             }
             return null;
         }
+
+        private void WriteLogToFile(String msg)
+        {
+            try
+            {
+
+                using (StreamWriter w = File.AppendText(AppDomain.CurrentDomain.BaseDirectory + "/ChatterRestService.txt"))
+                {
+                    // write a line of text to the file
+                    w.WriteLine(DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss:ffff"));
+                    w.WriteLine("\t" + msg);
+
+                    // close the stream
+                    w.Close();
+
+                }
+            }
+            catch (Exception ex) { throw ex; }
+        }
+    
     }
 
 
