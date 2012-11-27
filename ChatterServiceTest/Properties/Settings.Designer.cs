@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ChatterService.Properties {
+namespace ChatterServiceTest.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -20,17 +20,6 @@ namespace ChatterService.Properties {
         public static Settings Default {
             get {
                 return defaultInstance;
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=dev-sql-ctsi.ucsf.edu;Initial Catalog=profiles_102;User ID=App_Profil" +
-            "es10;Password=Password1234")]
-        public string profilesConnectionString {
-            get {
-                return ((string)(this["profilesConnectionString"]));
             }
         }
         

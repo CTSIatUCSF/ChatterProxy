@@ -15,7 +15,7 @@ namespace ChatterService
         public string GetEmployeeId(int personId)
         {
             ProfilesDataContext dc = new ProfilesDataContext();
-            string employeeId = (from p in dc.GetTable<person>() where (p.PersonID == personId) select p.InternalUsername).FirstOrDefault();
+            string employeeId = (from p in dc.GetTable<Person>() where (p.PersonID == personId) select p.InternalUsername).FirstOrDefault();
 
             if (string.IsNullOrEmpty(employeeId))
             {

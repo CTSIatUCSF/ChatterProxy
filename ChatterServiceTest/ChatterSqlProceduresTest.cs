@@ -35,7 +35,7 @@ namespace ChatterServiceTest
 
             SqlXml messageBlob = new SqlXml(xmlReader);
 
-            ChatterSqlProcedures.CreateActivity(_url, _username, _password, _token, _employeeId, messageBlob, _pmid, _title, _body);
+            //ChatterSqlProcedures.CreateActivity(_url, _username, _password, _token, _employeeId, messageBlob, _pmid, _title, _body);
         }
 
         [TestMethod]
@@ -47,7 +47,7 @@ namespace ChatterServiceTest
 
             SqlXml messageBlob = new SqlXml(xmlReader);
 
-            ChatterSqlProcedures.CreateActivity(_url, _username, _password, _token, _employeeId, messageBlob, _pmid, _title, _body);
+            //ChatterSqlProcedures.CreateActivity(_url, _username, _password, _token, _employeeId, messageBlob, _pmid, _title, _body);
         }
 
         [TestMethod]
@@ -61,7 +61,7 @@ namespace ChatterServiceTest
 
             try
             {
-                ChatterSqlProcedures.CreateActivity(_url, _username, _password, _token, _employeeId, messageBlob, _pmid, _title, _body);
+                //ChatterSqlProcedures.CreateActivity(_url, _username, _password, _token, _employeeId, messageBlob, _pmid, _title, _body);
                 Assert.Fail("CreateActivity method should throw and exception if xml is incorrect");
             }
             catch (Exception ex)
@@ -81,23 +81,13 @@ namespace ChatterServiceTest
 
             try
             {
-                ChatterSqlProcedures.CreateActivity(_url, _username, _password, _token, "1221212", messageBlob, _pmid, _title, _body);
+                //ChatterSqlProcedures.CreateActivity(_url, _username, _password, _token, "1221212", messageBlob, _pmid, _title, _body);
                 Assert.Fail("CreateActivity method should throw and exception if user is not found by employee id");
             }
             catch (Exception ex)
             {
                 Assert.AreEqual("Object not found, Salesforce.User, keys:1221212", ex.Message);
             }
-        }
-
-        [TestMethod]
-        public void TestConvertUnixEpochTime()
-        {
-            DateTime dt = ChatterSqlProcedures.ConvertUnixEpochTime("1304641078588");
-            Assert.AreEqual(new DateTime(2011, 5, 5, 16, 17, 58, 588, DateTimeKind.Utc), dt);
-
-            ChatterSqlProcedures.ConvertUnixEpochTime("-2147483648");
-            ChatterSqlProcedures.ConvertUnixEpochTime("1304705930906.25");
         }
 
     }

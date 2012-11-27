@@ -60,7 +60,7 @@ namespace Salesforce.apex {
                 this.Url = urlSetting;
             }
             else {
-                this.Url = "https://cs10-api.salesforce.com/services/Soap/s/22.0";
+                this.Url = "https://cs10-api.salesforce.com/services";
             }
         }
         

@@ -15,6 +15,10 @@ using System.Web.Script.Services;
 using System.IO;
 using System.Collections.Specialized;
 using System.Threading;
+using DevDefined.OAuth;
+using DevDefined.OAuth.Framework;
+using DevDefined.OAuth.Framework.Signing;
+using System.Security.Cryptography;
 
 namespace ChatterService.Web
 {
@@ -71,6 +75,12 @@ namespace ChatterService.Web
         readonly int cacheInterval;
         readonly int cacheCapacity;
         readonly bool logService;
+
+        readonly bool signedFetch;
+        OAuthContextSigner signer;
+        SigningContext signingContext;
+        AsymmetricAlgorithm provider;
+
         bool initialized = false;
         Timer activitiesFetcher;
         List<Activity> latestList = new List<Activity>();
@@ -90,7 +100,35 @@ namespace ChatterService.Web
             cacheInterval = Int32.Parse(ConfigurationSettings.AppSettings["CacheInterval"]);
             cacheCapacity = Int32.Parse(ConfigurationSettings.AppSettings["cacheCapacity"]);
             logService = Boolean.Parse(ConfigurationSettings.AppSettings["LogService"]);
+            signedFetch = Boolean.Parse(ConfigurationSettings.AppSettings["SignedFetch"]);
             Init();
+        }
+
+        private void Init()
+        {
+            lock (this)
+            {
+                if (!initialized)
+                {
+                    ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(customXertificateValidation);
+                    activitiesFetcher = new Timer(GetActivities, null, 0, cacheInterval * 1000);
+                    profilesService = new ProfilesServices();
+                    getChatterSoapService();
+
+                    if (signedFetch)
+                    {
+                        // load default cert
+                        X509Certificate2 cert = new X509Certificate2(ConfigurationSettings.AppSettings["OAuthCert"]);
+                        provider = cert.PublicKey.Key;
+                        signer = new OAuthContextSigner();
+                        signingContext = new SigningContext();
+                        //signingContext.ConsumerSecret = ...; // if there is a consumer secret
+                        signingContext.Algorithm = provider;
+                    }
+
+                    initialized = true;
+                }
+            }
         }
 
         public Activity[] GetActivities(int count)
@@ -133,6 +171,7 @@ namespace ChatterService.Web
             try {
                 IChatterSoapService soap = getChatterSoapService();
 
+                ValidateSignature();
                 bool includeUserActivities = mode.Equals("all", StringComparison.InvariantCultureIgnoreCase);
 
                 var ssUserId = getSalesforceUserId(userId);
@@ -149,6 +188,7 @@ namespace ChatterService.Web
         public CommonResult CreateGroup(Stream stream)
         {
             try {
+                ValidateSignature();
                 NameValueCollection p = parseParameters(stream);
 
                 if (string.IsNullOrEmpty(p["name"]))
@@ -220,20 +260,6 @@ namespace ChatterService.Web
             return true;
         }
 
-        private void Init()
-        {
-            lock(this) {
-                if (!initialized)
-                {
-                    ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(customXertificateValidation);
-                    activitiesFetcher = new Timer(GetActivities, null, 0, cacheInterval * 1000);
-                    profilesService = new ProfilesServices();
-                    getChatterSoapService();
-                    initialized = true;
-                }
-            }
-        }
-
         #region REST
         public CommonResult IsUserFollowing(string viewerId, string ownerId, string accessToken)
         {
@@ -271,6 +297,7 @@ namespace ChatterService.Web
         {
             try
             {
+                ValidateSignature();
                 var ssOwnerId = getSalesforceUserId(ownerId);
                 var ssViewerId = getSalesforceUserId(viewerId);
 
@@ -293,6 +320,7 @@ namespace ChatterService.Web
             }
             try
             {
+                ValidateSignature();
                 var ssOwnerId = getSalesforceUserId(ownerId);
                 var ssViewerId = getSalesforceUserId(viewerId);
 
@@ -381,6 +409,24 @@ namespace ChatterService.Web
                 }
             }
             catch (Exception ex) { throw ex; }
+        }
+
+        private void ValidateSignature()
+        {
+            if (!signedFetch)
+            {
+                return;
+            }
+
+            IncomingWebRequestContext request = WebOperationContext.Current.IncomingRequest;
+
+            IOAuthContext context = new OAuthContextBuilder().FromUri(request.Method, request.UriTemplateMatch.RequestUri);                        
+
+            // use context.ConsumerKey to fetch information required for signature validation for this consumer.
+            if (!signer.ValidateSignature(context, signingContext)) 
+            {
+                throw new Exception("Invalid signature : " + request.UriTemplateMatch.RequestUri);
+            }
         }
     }
    

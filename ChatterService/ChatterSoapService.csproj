@@ -94,6 +94,11 @@
       <DependentUpon>Profiles.dbml</DependentUpon>
     </Compile>
     <Compile Include="ProfilesServices.cs" />
+    <Compile Include="profiles_102DataSet.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>profiles_102DataSet.xsd</DependentUpon>
+    </Compile>
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
@@ -115,6 +120,17 @@
     </None>
     <None Include="packages.config">
       <SubType>Designer</SubType>
+    </None>
+    <None Include="profiles_102DataSet.xsc">
+      <DependentUpon>profiles_102DataSet.xsd</DependentUpon>
+    </None>
+    <None Include="profiles_102DataSet.xsd">
+      <Generator>MSDataSetGenerator</Generator>
+      <LastGenOutput>profiles_102DataSet.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="profiles_102DataSet.xss">
+      <DependentUpon>profiles_102DataSet.xsd</DependentUpon>
     </None>
     <None Include="Salesforce\SalesforceApex.wsdl" />
     <None Include="Salesforce\SalesforceService.wsdl" />

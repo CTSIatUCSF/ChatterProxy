@@ -1,4 +1,4 @@
-ALTER DATABASE profiles_100810 SET TRUSTWORTHY ON
+ALTER DATABASE profiles_102 SET TRUSTWORTHY ON
 
 exec sp_configure 'clr enable', 1
 GO
@@ -35,16 +35,17 @@ WITH PERMISSION_SET = UNSAFE
 GO
 
 
-CREATE PROCEDURE usp_CreateChatterActivity
+CREATE PROCEDURE [UCSF.].[CreateChatterActivity]
 @url nvarchar(500),
 @userName nvarchar(50),
 @password nvarchar(50),
 @token nvarchar(100),
-@userId nvarchar(50),
-@message xml,
-@PMID int,
-@title nvarchar(255),
-@body nvarchar(255)
+@createdDT datetime,
+@externalMessage bit,
+@employeeId nvarchar(50),
+@actUrl nvarchar(255),
+@actTitle nvarchar(255),
+@actBody nvarchar(255)
 AS EXTERNAL NAME ChatterSoapService.[ChatterService.ChatterSqlProcedures].CreateActivity
 GO
 

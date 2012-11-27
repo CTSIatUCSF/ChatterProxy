@@ -168,13 +168,12 @@ namespace ChatterServiceTest
         [TestMethod]
         public void TestCreateProfileActivity()
         {
-            //IChatterService service = new ChatterService.ChatterService(_url);
-            //service.Login(_username, _password, _token);
-            IChatterSoapService service = new ChatterService.ChatterSoapService("https://test.salesforce.com/services/Soap/c/22.0");
-            service.Login("ctsiapi@oneorg.ucsf.edu.uatmain", "CTProf123", "ao56v6ERhH0XD1U4aan0QTST");
+            IChatterSoapService service = new ChatterService.ChatterSoapService(_url);
+            service.Login(_username, _password, _token);
 
             DateTime dt = new DateTime(2011, 7, 29, 14, 11, 12);
-            service.CreateProfileActivity("021125612", "Edited their narrative", "Test Activity from 'TestCreateReseachProfile':" + dt, dt);
+            service.CreateProfileActivity("025693078", "Edited their narrative", "Test Activity from 'TestCreateReseachProfile':" + dt, dt);
+            service.CreateProfileActivity("025693078", "Null body test", null, dt);
             //service.CreateProfileActivity(_employeeId, "Edited their narrative", "Test Activity from 'TestCreateReseachProfile':" + dt, dt);
             
         }

@@ -20,7 +20,7 @@ namespace ChatterService
 
         public ChatterSoapService(string url)
         {
-            Url = url + "/Soap/c/22.0";
+            Url = url + "/Soap/s/22.0";
         }
 
         public bool Login(string username, string password, string token)
@@ -120,7 +120,7 @@ namespace ChatterService
             Salesforce.apex.ApexService service = new Salesforce.apex.ApexService();
             int idx1 = _service.Url.IndexOf(@"/services/");
             int idx2 = service.Url.IndexOf(@"/services/");
-            service.Url = _service.Url.Substring(0, idx1) + service.Url.Substring(idx2);
+            service.Url = _service.Url.Substring(0, idx1) + (idx2 > 0 ? service.Url.Substring(idx2) : "/Soap/s/22.0");
 
             service.SessionHeaderValue = new Salesforce.apex.SessionHeader();
             service.SessionHeaderValue.sessionId = _service.SessionHeaderValue.sessionId;

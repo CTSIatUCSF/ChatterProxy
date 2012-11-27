@@ -5,8 +5,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[sp_ExportActivitiesToChatter]') AND type in (N'P', N'PC')) BEGIN
-	DROP PROCEDURE [dbo].[sp_ExportActivitiesToChatter]
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[UCSF.].[ExportActivitiesToChatter]') AND type in (N'P', N'PC')) BEGIN
+	DROP PROCEDURE [UCSF.].[ExportActivitiesToChatter]
 END
 GO
 
@@ -15,7 +15,7 @@ GO
 -- Create date: <Create Date,,>
 -- Description:	<Description,,>
 -- =============================================
-CREATE PROCEDURE [dbo].[sp_ExportActivitiesToChatter] 
+CREATE PROCEDURE [UCSF.].[ExportActivitiesToChatter] 
 	@url nvarchar(256),
 	@username nvarchar(50),
 	@password nvarchar(50),
@@ -26,39 +26,37 @@ BEGIN
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
 
-	declare @activityId int
-	declare @userId int
+	declare @activityLogId int
 	declare @createdDT datetime
-	declare @activity xml
+	declare @externalMessage bit
 	declare @employeeId nvarchar(50)
-	declare @PMID int
-	declare @articleTitle nvarchar(255)
-	declare @journalTitle nvarchar(255)
+	declare @actUrl nvarchar(255)
+	declare @actTitle nvarchar(255)
+	declare @actBody nvarchar(255)
 	declare @attempts int
 	declare @errorCount int
-	declare @errorMsg nvarchar(max)
+	declare @errorMsg nvarchar(255)
 	
 	set @errorCount = 0
 	
 	DECLARE activityCursor CURSOR FAST_FORWARD FOR 
-	SELECT TOP 100 a.activityId, a.userId, a.createdDT, a.activity, a.chatterAttempts ,u.InternalUserName as employeeId, p.PMID, p.ArticleTitle, p.JournalTitle
-	FROM ([shindig_activity] a INNER JOIN [dbo].[user] u ON a.[userId] = u.[UserID]) left outer join pm_pubs_general p on 
-		(a.xtraId1Type = 'PMID' and p.PMID = cast(a.xtraId1Value as int))
-	WHERE a.chatterFlag is null
-	ORDER BY userId
+	SELECT TOP 100 activityLogId, createdDT, externalMessage, employeeId, url, title, body, chatterAttempts
+	FROM [UCSF.].[ChatterActivity] 
+	WHERE chatterFlag is null
+	ORDER BY activityLogId
 
 	OPEN activityCursor
 
 	FETCH NEXT FROM activityCursor 
-	INTO @activityId, @userId, @createdDT, @activity, @attempts, @employeeId, @PMID, @articleTitle, @journalTitle
+	INTO @activityLogId, @createdDT, @externalMessage, @employeeId, @actUrl, @actTitle, @actBody, @attempts
 
 	WHILE @@FETCH_STATUS = 0
 	BEGIN
 		BEGIN TRY
 			set @attempts = ISNULL(@attempts, 0) + 1
 			
-			exec dbo.usp_CreateChatterActivity @url, @username, @password, @token, @employeeId, @activity, @PMID, @articleTitle, @journalTitle
-			UPDATE shindig_activity SET chatterFlag = 'S', chatterAttempts = @attempts, updatedDT = GETDATE() WHERE activityId = @activityId
+			exec [UCSF.].[CreateChatterActivity] @url, @username, @password, @token, @createdDT, @externalMessage, @employeeId, @actUrl, @actTitle, @actBody
+			UPDATE [UCSF.].[ChatterActivity] SET chatterFlag = 'S', chatterAttempts = @attempts, updatedDT = GETDATE() WHERE activityLogId = @activityLogId
 		END TRY
 		BEGIN CATCH
 			set @errorCount = @errorCount + 1
@@ -66,10 +64,10 @@ BEGIN
 			RAISERROR (@errorMsg, 10, 1)
 			
 			IF @attempts > 0 BEGIN
-				UPDATE shindig_activity SET chatterFlag = 'F', chatterAttempts = @attempts, updatedDT = GETDATE() WHERE activityId = @activityId
+				UPDATE [UCSF.].[ChatterActivity] SET chatterFlag = 'F', chatterAttempts = @attempts, updatedDT = GETDATE() WHERE activityLogId = @activityLogId
 			END	
 			ELSE BEGIN
-				UPDATE shindig_activity SET chatterAttempts = @attempts, updatedDT = GETDATE() WHERE activityId = @activityId
+				UPDATE [UCSF.].[ChatterActivity] SET chatterAttempts = @attempts, updatedDT = GETDATE() WHERE activityLogId = @activityLogId
 			END
 						 
 			IF @errorCount > 100 BEGIN
@@ -81,7 +79,7 @@ BEGIN
 		END CATCH
 		
 		FETCH NEXT FROM activityCursor 
-		INTO @activityId, @userId, @createdDT, @activity, @attempts, @employeeId, @PMID, @articleTitle, @journalTitle
+		INTO @activityLogId, @createdDT, @externalMessage, @employeeId, @actUrl, @actTitle, @actBody, @attempts
 	END
 	
 	CLOSE activityCursor

@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 11, 9.375" name="Profiles">
+<ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 11, 8.5" name="Profiles">
   <DataContextMoniker Name="/ProfilesDataContext" />
   <nestedChildShapes>
-    <classShape Id="47e1979a-099a-4468-93bf-c154aba5ec60" absoluteBounds="3.25, 1.125, 2, 7.9987410481770826">
-      <DataClassMoniker Name="/ProfilesDataContext/person" />
+    <classShape Id="c8f64909-066f-448b-9a01-1786c667afc9" absoluteBounds="3.75, 1.125, 2, 6.1938297526041657">
+      <DataClassMoniker Name="/ProfilesDataContext/Person" />
       <nestedChildShapes>
-        <elementListCompartment Id="738b95f4-cbae-4927-ab1a-bb839d8d7a60" absoluteBounds="3.265, 1.585, 1.9700000000000002, 7.438741048177083" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="5dc11b78-8ee7-45e5-afb1-d287f728a084" absoluteBounds="3.7649999999999997, 1.585, 1.9700000000000002, 5.6338297526041661" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
   </nestedChildShapes>
