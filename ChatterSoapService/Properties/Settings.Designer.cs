@@ -33,16 +33,5 @@ namespace ChatterService.Properties {
                 return ((string)(this["profilesConnectionString"]));
             }
         }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=dev-sql-ctsi;Initial Catalog=profiles_102;Persist Security Info=True;" +
-            "User ID=sa;Password=IlikeCTSI!")]
-        public string profiles_102ConnectionString {
-            get {
-                return ((string)(this["profiles_102ConnectionString"]));
-            }
-        }
     }
 }

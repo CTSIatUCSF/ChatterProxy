@@ -12,6 +12,7 @@ namespace ChatterService.Model
         TrackedChanges,
         UserStatus,
         TextPost,
+        LinkPost,
         ContentPost
     }
 
@@ -48,6 +49,12 @@ namespace ChatterService.Model
 
         [DataMember(Name="m")]
         public string Message { get; set; }
+
+        [DataMember(Name = "l")]
+        public string LinkUrl { get; set; }
+
+        [DataMember(Name = "t")]
+        public string Title { get; set; }
 
         public ActivityType Type { get; set; }
 

@@ -201,14 +201,14 @@ namespace ChatterService.Web
                     return new CommonResult() { Success = false, ErrorMessage = "OwnerId is required." };
                 }
 
-                int personId = Int32.Parse(p["ownerId"]);
+                string nodeId = p["ownerId"];
                 string descr = p["description"];
                 if (string.IsNullOrEmpty(descr))
                 {
                     descr = p["name"];
                 }
 
-                string employeeId = profilesService.GetEmployeeId(personId);
+                string employeeId = profilesService.GetEmployeeId(nodeId);
 
                 IChatterSoapService soap = getChatterSoapService();
                 string groupId = soap.CreateGroup(p["name"], descr, employeeId);
@@ -221,7 +221,7 @@ namespace ChatterService.Web
                     {
                         try
                         {
-                            string eId = profilesService.GetEmployeeId(Int32.Parse(pId));
+                            string eId = profilesService.GetEmployeeId(pId);
                             employeeList.Add(eId);
                         }
                         catch (Exception ex)
@@ -336,15 +336,15 @@ namespace ChatterService.Web
         }
         #endregion
 
-        private string getSalesforceUserId(string profilesId)
+        private string getSalesforceUserId(string nodeId)
         {
-            Object objUserId = HttpRuntime.Cache[profilesId];
+            Object objUserId = HttpRuntime.Cache[nodeId];
 
             if (objUserId == null)
             {
                 IChatterSoapService soap = getChatterSoapService();
-                objUserId = soap.GetUserId(profilesService.GetEmployeeId(Int32.Parse(profilesId)));
-                HttpRuntime.Cache.Insert(profilesId, objUserId);
+                objUserId = soap.GetUserId(profilesService.GetEmployeeId(nodeId));
+                HttpRuntime.Cache.Insert(nodeId, objUserId);
             }
             return Convert.ToString(objUserId);
         }

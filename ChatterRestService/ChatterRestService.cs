@@ -74,7 +74,7 @@ namespace ChatterService
 
         public string Login(string client_id, string grant_type, string client_secret, string username, string password)
         {
-            _client = new RestClient(Url);
+            RestClient client = new RestClient(Url);
 
             var request = new RestRequest("oauth2/token", Method.POST);
             request.AddParameter("client_id", client_id);
@@ -84,7 +84,10 @@ namespace ChatterService
             request.AddParameter("password", password);
 
             /// execute the request
-            _token = _client.Execute<OAuthToken>(request).Data;
+            _token = client.Execute<OAuthToken>(request).Data;
+
+            // create client with new url based on returned URL
+            _client = new RestClient(_token.instance_url + "/services");
             return _token.access_token;
         }
 

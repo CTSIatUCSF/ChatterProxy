@@ -25,7 +25,7 @@ namespace ChatterService
             service.AllowUntrustedConnection();
             service.Login(username.Value, password.Value, token.Value);
 
-            service.CreateProfileActivity(employeeId.IsNull ? null : employeeId.Value, actTitle.IsNull ? null : actTitle.Value, actBody.IsNull ? null : actBody.Value, createdDT.Value);
+            service.CreateProfileActivity(employeeId.IsNull ? null : employeeId.Value, actUrl.IsNull ? null : actUrl.Value, actTitle.IsNull ? null : actTitle.Value, actBody.IsNull ? null : actBody.Value, createdDT.Value);
             if (externalMessage.IsTrue)
             {
                 service.CreateExternalMessage(actUrl.IsNull ? null : actUrl.Value, actTitle.IsNull ? null : actTitle.Value, actBody.IsNull ? null : actBody.Value, employeeId.IsNull ? null : employeeId.Value);

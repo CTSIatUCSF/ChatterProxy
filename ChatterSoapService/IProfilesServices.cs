@@ -7,6 +7,6 @@ namespace ChatterService
 {
     public interface IProfilesServices
     {
-        string GetEmployeeId(int personId);
+        string GetEmployeeId(string nodeId);
     }
 }

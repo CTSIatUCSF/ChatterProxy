@@ -57,10 +57,10 @@ namespace Salesforce.apex {
         public ApexService() {
             string urlSetting = System.Configuration.ConfigurationManager.AppSettings["SalesForceUrl"];
             if ((urlSetting != null)) {
-                this.Url = urlSetting;
+                this.Url = urlSetting + "/Soap/c/22.0";
             }
             else {
-                this.Url = "https://cs10-api.salesforce.com/services";
+                this.Url = "https://cs10-api.salesforce.com/services/Soap/s/22.0";
             }
         }
         

@@ -88,7 +88,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ChatterService\ChatterSoapService.csproj">
+    <ProjectReference Include="..\ChatterSoapService\ChatterSoapService.csproj">
       <Project>{2B6DAD87-88CE-4870-85F7-159BE78ADE05}</Project>
       <Name>ChatterSoapService</Name>
     </ProjectReference>

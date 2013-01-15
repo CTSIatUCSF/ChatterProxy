@@ -20,7 +20,7 @@ namespace ChatterService
 
         public ChatterSoapService(string url)
         {
-            Url = url + "/Soap/s/22.0";
+            Url = url +"/Soap/c/22.0";
         }
 
         public bool Login(string username, string password, string token)
@@ -55,7 +55,7 @@ namespace ChatterService
             ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(customCertificateValidation);
         }
 
-        public void CreateActivity(string userId, string code, string message, DateTime timestamp)
+        public void CreateActivity(string userId, string url, string code, string message, DateTime timestamp)
         {
             if (_service == null)
                 throw new Exception("Service is null. You need to login first!");
@@ -63,11 +63,14 @@ namespace ChatterService
             if (string.IsNullOrEmpty(message))
                 throw new Exception("Invalid argument!");
 
+            string type = (url != null ? "TextPost" : "LinkPost");
+
             var news = new Salesforce.FeedItem
             {
                 ParentId = userId,
                 CreatedById = userId,
-                Type = "TextPost",
+                Type = type,
+                LinkUrl = url,
                 Title = code,
                 Body = message,
                 CreatedDate = timestamp,
@@ -77,14 +80,15 @@ namespace ChatterService
             var result = _service.create(new Salesforce.sObject[] { news });
         }
 
-        public void CreateActivityUsingApex(string userId, string code, string message, DateTime timestamp)
+        public void CreateActivityUsingApex(string userId, string url, string code, string message, DateTime timestamp)
         {
             if (string.IsNullOrEmpty(message))
                 throw new Exception("Invalid argument!");
 
             DateTime utc = timestamp.ToUniversalTime();
             String apex = "FeedItem post = new FeedItem(); \n" +
-                    " post.ParentId = '" + userId  + "'; \n" +
+                    " post.Type = " + (url != null ? "'LinkPost'; \n post.LinkUrl = '" + EncodeString(url) : "'TextPost'") + "'; \n" +
+                    " post.ParentId = '" + userId + "'; \n" +
                     " post.Title = '" + EncodeString(code) + "'; \n" +
                     " post.Body = '" + EncodeString(message) + "'; \n" +
                     " post.CreatedById = '" + userId + "'; \n" +
@@ -93,7 +97,7 @@ namespace ChatterService
             ExecuteApex(apex);
         }
 
-        public void CreateProfileActivity(string employeeId, string code, string message, DateTime timestamp)
+        public void CreateProfileActivity(string employeeId, string url, string code, string message, DateTime timestamp)
         {
             if (string.IsNullOrEmpty(message))
                 throw new Exception("Invalid argument!");
@@ -102,6 +106,7 @@ namespace ChatterService
 
             DateTime utc = timestamp.ToUniversalTime();
             String apex = "FeedItem post = new FeedItem(); \n" +
+                    " post.Type = " + (url != null ? "'LinkPost'; \n post.LinkUrl = '" + EncodeString(url)  + "'" : "'TextPost'") + "; \n" +
                     " post.ParentId = '" + profile.Id + "'; \n" +
                     " post.Title = '" + EncodeString(code) + "'; \n" +
                     " post.Body = '" + EncodeString(message) + "'; \n" +
@@ -120,7 +125,7 @@ namespace ChatterService
             Salesforce.apex.ApexService service = new Salesforce.apex.ApexService();
             int idx1 = _service.Url.IndexOf(@"/services/");
             int idx2 = service.Url.IndexOf(@"/services/");
-            service.Url = _service.Url.Substring(0, idx1) + (idx2 > 0 ? service.Url.Substring(idx2) : "/Soap/s/22.0");
+            service.Url = _service.Url.Substring(0, idx1) + service.Url.Substring(idx2);
 
             service.SessionHeaderValue = new Salesforce.apex.SessionHeader();
             service.SessionHeaderValue.sessionId = _service.SessionHeaderValue.sessionId;
@@ -159,6 +164,8 @@ namespace ChatterService
                            {
                                Id = record.Id,
                                Message = record.Body,
+                               LinkUrl = record.LinkUrl,
+                               Title = record.Title,
                                CreatedDT = (DateTime)record.CreatedDate,
                                CreatedById = record.CreatedById,
                                Parent = new User
@@ -188,6 +195,8 @@ namespace ChatterService
                {
                    Id = record.Id,
                    Message = record.Body,
+                   LinkUrl = record.LinkUrl,
+                   Title = record.Title,
                    CreatedDT = (DateTime)record.CreatedDate,
                    CreatedById = record.CreatedById,
                    Parent = new User
@@ -219,7 +228,7 @@ namespace ChatterService
             bool done = false;
             while (!done)
             {
-                for (int i = 0; i < qr.records.Length && activities.Count < count; i++)
+                for (int i = 0; qr.records != null && i < qr.records.Length && activities.Count < count; i++)
                 {
                     Salesforce.Research_Profile__Feed record = (Salesforce.Research_Profile__Feed)qr.records[i];
 
@@ -234,6 +243,8 @@ namespace ChatterService
                     {
                         Id = record.Id,
                         Message = record.Body,
+                        LinkUrl = record.LinkUrl,
+                        Title = record.Title,
                         CreatedDT = (DateTime)record.CreatedDate,
                         CreatedById = record.CreatedById,
                         Type = ActivityType.TextPost,

@@ -25,32 +25,32 @@ namespace ChatterService
             ORDER BY g.Id DESC LIMIT 1";
 
         public const string SOQL_GET_PROFILE_ACTIVITIES = @"
-            Select u.Type,  u.ParentId, u.Id, u.CreatedDate, u.CreatedById, Body, Title,
+            Select u.Type,  u.ParentId, u.Id, u.CreatedDate, u.CreatedById, Body, LinkUrl, Title,
             Parent.User__r.Name, Parent.User__r.FirstName, Parent.User__r.LastName, Parent.User__r.UCSF_ID__c 
             From Research_Profile__Feed u 
-            Where Type='TextPost' and u.IsDeleted = false 
+            Where (Type='TextPost' or Type='LinkPost') and u.IsDeleted = false 
             ORDER BY CreatedDate DESC, ID DESC LIMIT {0}";
 
         public const string SOQL_GET_PROFILE_ACTIVITIES_AFTER = @"
-            Select u.Type,  u.ParentId, u.Id, u.CreatedDate, u.CreatedById, Body, Title,
+            Select u.Type,  u.ParentId, u.Id, u.CreatedDate, u.CreatedById, Body, LinkUrl, Title,
             Parent.User__r.Name, Parent.User__r.FirstName, Parent.User__r.LastName, Parent.User__r.UCSF_ID__c 
             From Research_Profile__Feed u 
-            Where Type='TextPost' and u.IsDeleted = false and u.CreatedDate > {0}Z 
+            Where (Type='TextPost' or Type='LinkPost') and u.IsDeleted = false and u.CreatedDate > {0}Z 
             ORDER BY CreatedDate DESC, ID DESC LIMIT {1}";
 
         public const string SOQL_GET_PROFILE_ACTIVITIES_BY_USER = @"
-            Select u.Type,  u.ParentId, u.Id, u.CreatedDate, u.CreatedById, Body, Title,
+            Select u.Type,  u.ParentId, u.Id, u.CreatedDate, u.CreatedById, Body, LinkUrl, Title,
             Parent.User__r.Name, Parent.User__r.FirstName, Parent.User__r.LastName, Parent.User__r.UCSF_ID__c 
             From Research_Profile__Feed u 
-            Where Type='TextPost' and u.IsDeleted = false and Parent.User__r.id = '{0}'
+            Where (Type='TextPost' or Type='LinkPost') and u.IsDeleted = false and Parent.User__r.id = '{0}'
             ORDER BY CreatedDate DESC, ID DESC LIMIT {1}";
 
         public const string SOQL_GET_ALL_USER_ACTIVITIES = @"
-            Select u.Type,  u.ParentId, u.Id, u.CreatedDate, u.CreatedById, Body,
+            Select u.Type,  u.ParentId, u.Id, u.CreatedDate, u.CreatedById, Body, LinkUrl, Title,
             Parent.Name, Parent.FirstName, Parent.LastName, Parent.UCSF_ID__c, 
             (SELECT ID, FieldName, OldValue, NewValue FROM FeedTrackedChanges ORDER BY ID DESC) 
             From UserFeed u 
-            Where (Type='TextPost' or Type='UserStatus') and u.IsDeleted = false
+            Where (Type='TextPost' or Type='LinkPost' or Type='UserStatus') and u.IsDeleted = false
             ORDER BY CreatedDate DESC, ID DESC LIMIT {0}";
 
         public const string SOQL_GET_USER_ACTIVITIES = @"

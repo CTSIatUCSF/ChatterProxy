@@ -134,7 +134,7 @@ namespace ChatterServiceTest
             service.Login(_username, _password, _token);
 
             DateTime dt = new DateTime(2011, 7, 6, 10, 11, 12);
-            service.CreateActivity(_userId, "Edited their narrative", "Test Activity from ChatterServiceTest.TestCreateActivity:" + dt, dt);
+            service.CreateActivity(_userId, null, "Edited their narrative", "Test Activity from ChatterServiceTest.TestCreateActivity:" + dt, dt);
         }
 
         [TestMethod]
@@ -144,7 +144,7 @@ namespace ChatterServiceTest
             service.Login(_username, _password, _token);
 
             DateTime dt = DateTime.Now;
-            service.CreateActivityUsingApex(_userId, "Edited their narrative", "Test Activity from 'ChatterServiceTest.TestCreateActivityUsingApex':" + dt, dt);
+            service.CreateActivityUsingApex(_userId, null, "Edited their narrative", "Test Activity from 'ChatterServiceTest.TestCreateActivityUsingApex':" + dt, dt);
         }
 
         [TestMethod]
@@ -171,9 +171,10 @@ namespace ChatterServiceTest
             IChatterSoapService service = new ChatterService.ChatterSoapService(_url);
             service.Login(_username, _password, _token);
 
-            DateTime dt = new DateTime(2011, 7, 29, 14, 11, 12);
-            service.CreateProfileActivity("025693078", "Edited their narrative", "Test Activity from 'TestCreateReseachProfile':" + dt, dt);
-            service.CreateProfileActivity("025693078", "Null body test", null, dt);
+            //DateTime dt = new DateTime(2012, 7, 29, 14, 11, 12);
+            DateTime dt = DateTime.Now;
+            service.CreateProfileActivity("025693078", null, "Edited their narrative", "Test Activity from 'TestCreateReseachProfile':" + dt, dt);
+            //service.CreateProfileActivity("025693078", "Null body test", null, dt);
             //service.CreateProfileActivity(_employeeId, "Edited their narrative", "Test Activity from 'TestCreateReseachProfile':" + dt, dt);
             
         }
