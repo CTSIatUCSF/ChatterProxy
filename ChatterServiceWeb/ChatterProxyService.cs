@@ -81,10 +81,9 @@ namespace ChatterService.Web
         SigningContext signingContext;
         AsymmetricAlgorithm provider;
 
-        bool initialized = false;
+        bool fetchingActivities = false;
         Timer activitiesFetcher;
         List<Activity> latestList = new List<Activity>();
-        List<Activity> displayList = new List<Activity>();
 
         IProfilesServices profilesService = null;
 
@@ -106,29 +105,22 @@ namespace ChatterService.Web
 
         private void Init()
         {
-            lock (this)
+            ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(customXertificateValidation);
+            profilesService = new ProfilesServices();
+            getChatterSoapService();
+
+            if (signedFetch)
             {
-                if (!initialized)
-                {
-                    ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(customXertificateValidation);
-                    activitiesFetcher = new Timer(GetActivities, null, 0, cacheInterval * 1000);
-                    profilesService = new ProfilesServices();
-                    getChatterSoapService();
-
-                    if (signedFetch)
-                    {
-                        // load default cert
-                        X509Certificate2 cert = new X509Certificate2(ConfigurationSettings.AppSettings["OAuthCert"]);
-                        provider = cert.PublicKey.Key;
-                        signer = new OAuthContextSigner();
-                        signingContext = new SigningContext();
-                        //signingContext.ConsumerSecret = ...; // if there is a consumer secret
-                        signingContext.Algorithm = provider;
-                    }
-
-                    initialized = true;
-                }
+                // load default cert
+                X509Certificate2 cert = new X509Certificate2(ConfigurationSettings.AppSettings["OAuthCert"]);
+                provider = cert.PublicKey.Key;
+                signer = new OAuthContextSigner();
+                signingContext = new SigningContext();
+                //signingContext.ConsumerSecret = ...; // if there is a consumer secret
+                signingContext.Algorithm = provider;
             }
+
+            activitiesFetcher = new Timer(GetActivities, null, 0, cacheInterval * 1000);
         }
 
         public Activity[] GetActivities(int count)
@@ -149,20 +141,33 @@ namespace ChatterService.Web
 
         public void GetActivities(Object stateInfo)
         {
-            IChatterSoapService soap = getChatterSoapService();
-            Activity lastActivity = latestList.Count > 0 ? latestList[0] : null;
-            List<Activity> newActivities = soap.GetProfileActivities(lastActivity, cacheCapacity);
-            if (newActivities.Count > 0)
+            // this IS thread safe, but very hokey. Just don't want to pile up a bunch of threads in here
+            if (fetchingActivities)
             {
-                lock (latestList)
+                return;
+            }
+            fetchingActivities = true;
+            try
+            {
+                IChatterSoapService soap = getChatterSoapService();
+                Activity lastActivity = latestList.Count > 0 ? latestList[0] : null;
+                List<Activity> newActivities = soap.GetProfileActivities(lastActivity, cacheCapacity);
+                if (newActivities.Count > 0)
                 {
-                    latestList.AddRange(newActivities);
-                    latestList.Sort(new ActivitiesComparer());
-                    if (latestList.Count > cacheCapacity)
+                    lock (latestList)
                     {
-                        latestList.RemoveRange(cacheCapacity, latestList.Count - cacheCapacity);
+                        latestList.AddRange(newActivities);
+                        latestList.Sort(new ActivitiesComparer());
+                        if (latestList.Count > cacheCapacity)
+                        {
+                            latestList.RemoveRange(cacheCapacity, latestList.Count - cacheCapacity);
+                        }
                     }
                 }
+            }
+            finally
+            {
+                fetchingActivities = false;
             }
         }
 

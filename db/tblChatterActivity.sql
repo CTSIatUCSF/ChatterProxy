@@ -50,9 +50,10 @@ DECLARE
    @title nvarchar(255),
    @body nvarchar(255),
    @journalTitle varchar(1000)
-SELECT @privacyCode = i.privacyCode, @employeeId = p.InternalUserName, 
+SELECT @privacyCode = i.privacyCode, @employeeId = ISNULL(p.InternalUserName, ip.internalusername),
 	@methodName = i.methodName, @param1 = i.param1, @param2 = i.param2, @externalMessage = 0
-FROM [UCSF].[ActivityLog] i LEFT OUTER JOIN [Profile.Data].[Person] p ON i.personId = p.personID WHERE i.activityLogId = @activityLogId
+FROM [UCSF].[ActivityLog] i LEFT OUTER JOIN [Profile.Data].[Person] p ON i.personId = p.personID 
+LEFT OUTER JOIN [Profile.Import].[Person] ip on i.personId = UCSF.fnGeneratePersonID(ip.internalusername) WHERE i.activityLogId = @activityLogId
 -- if we have a PMID, go ahead and grab that info
 IF (@param1 = 'PMID')
    SELECT @url = 'http://www.ncbi.nlm.nih.gov/pubmed/' + @param2, @journalTitle = JournalTitle, @externalMessage = 1 FROM
@@ -98,7 +99,6 @@ IF (@title is not NULL)
 -- uncomment to help debut
 --select @activityLogId, @methodName, @title, @privacyCode, @externalMessage, @employeeId, @url, @param1, @param2;
 GO
-
 
 CREATE TRIGGER [UCSF].[addChatterActivity]
 ON [UCSF].[ActivityLog]
