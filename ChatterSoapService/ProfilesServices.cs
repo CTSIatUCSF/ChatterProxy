@@ -24,7 +24,6 @@ namespace ChatterService
             SqlConnection dbconnection = new SqlConnection(connstr);
             SqlCommand dbcommand = new SqlCommand();
 
-            SqlDataReader dbreader;
             dbconnection.Open();
             dbcommand.CommandType = CommandType.Text;
 
@@ -33,18 +32,46 @@ namespace ChatterService
 
             dbcommand.Connection = dbconnection;
 
-            dbreader = dbcommand.ExecuteReader(CommandBehavior.CloseConnection);
-
-            while (dbreader.Read())
+            using (SqlDataReader dbreader = dbcommand.ExecuteReader(CommandBehavior.CloseConnection))
             {
-                employeeId = dbreader[0].ToString();
+                while (dbreader.Read())
+                {
+                    employeeId = dbreader[0].ToString();
+                }
             }
 
-            if (!dbreader.IsClosed)
-                dbreader.Close();
-
-
             return employeeId;
+        }
+
+        public List<int> GetInactiveProfiles()
+        {
+            System.Text.StringBuilder sql = new System.Text.StringBuilder();
+
+            string connstr = ConfigurationManager.ConnectionStrings["ChatterService.Properties.Settings.profilesConnectionString"].ConnectionString;
+
+            sql.AppendLine("select personid from [Profile.Data].[Person] where IsActive = 0");
+
+            SqlConnection dbconnection = new SqlConnection(connstr);
+            SqlCommand dbcommand = new SqlCommand();
+
+            dbconnection.Open();
+            dbcommand.CommandType = CommandType.Text;
+
+            dbcommand.CommandText = sql.ToString();
+            dbcommand.CommandTimeout = 5000;
+
+            dbcommand.Connection = dbconnection;
+
+            List<int> retval = new List<int>();
+            using (SqlDataReader dbreader = dbcommand.ExecuteReader(CommandBehavior.CloseConnection))
+            {
+                while (dbreader.Read())
+                {
+                    retval.Add(dbreader.GetInt32(0));
+                }
+            }
+
+            return retval;
         }
 
         #endregion

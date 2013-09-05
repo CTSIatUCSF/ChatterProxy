@@ -12,7 +12,7 @@ using System.Data;
 namespace ChatterService
 {
 
-    public class ChatterSoapService : IChatterSoapService
+    public class ChatterSoapService : IChatterSoapService, IDisposable
     {
         private Salesforce.SforceService _service;
         private String _userId;
@@ -43,6 +43,11 @@ namespace ChatterService
             {
                 throw e;
             }
+        }
+
+        public void Dispose()
+        {
+            _service.logout();
         }
 
         private static bool customCertificateValidation(object sender, X509Certificate cert, X509Chain chain, System.Net.Security.SslPolicyErrors error)
@@ -218,12 +223,23 @@ namespace ChatterService
             return activities.items;
         }
 
+        public void DeleteActivities(List<Activity> activities)
+        {
+            String[] ids = new String[activities.Count];
+            int i = 0;
+            foreach (Activity activity in activities)
+            {
+                ids[i++] = activity.Id;
+            }
+            Salesforce.DeleteResult[] dr = _service.delete(ids);
+        }
+
         //return activities from SF
         protected List<Activity> QueryActivitiesFromSF(Activity lastActivity, int count)
         {            
             List<Activity> activities = new List<Activity>();
-            Salesforce.QueryResult qr = (lastActivity == null ? _service.query(string.Format(Queries.SOQL_GET_PROFILE_ACTIVITIES, 10000)) :
-                                                         _service.query(string.Format(Queries.SOQL_GET_PROFILE_ACTIVITIES_AFTER, lastActivity.CreatedDT.ToUniversalTime().ToString("s"), 10000)));
+            Salesforce.QueryResult qr = (lastActivity == null ? _service.query(string.Format(Queries.SOQL_GET_PROFILE_ACTIVITIES, count)) :
+                                                         _service.query(string.Format(Queries.SOQL_GET_PROFILE_ACTIVITIES_AFTER, lastActivity.CreatedDT.ToUniversalTime().ToString("s"), count)));
 
             bool done = false;
             while (!done)

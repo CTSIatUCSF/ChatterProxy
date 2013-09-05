@@ -229,5 +229,40 @@ namespace ChatterServiceTest
 
             Salesforce.CollaborationGroup group = service.GetCollaborationGroup(id);
         }
+
+        [TestMethod]
+        public void TestDeleteActivitiesFromDisabledProfiles()
+        {
+            List<int> peopleToDelete = new ProfilesServices().GetInactiveProfiles();
+            System.Diagnostics.Debug.WriteLine("Found " + peopleToDelete.Count + " people to remove from activity stream");
+            int total = 0;
+            List<Activity> killList = null;
+            do
+            {
+                killList = new List<Activity>();
+                try
+                {
+                    IChatterSoapService service = new ChatterService.ChatterSoapService(_url);
+                    service.Login(_username, _password, _token);
+                    // just do 1000 at a time
+                    foreach (Activity act in service.GetProfileActivities((Activity)null, 200))
+                    {
+                        if (peopleToDelete.Contains(act.ParentId))
+                        {
+                            killList.Add(act);
+                            System.Diagnostics.Debug.WriteLine("Deleting " + act.Id + " : " + act.Message + " for " + act.ParentName);
+                        }
+                    }
+                    ((ChatterSoapService)service).DeleteActivities(killList);
+                    System.Diagnostics.Debug.WriteLine("Deleted " + killList.Count + " activities");
+                    total += killList.Count;
+                }
+                catch (Exception e)
+                {
+                    System.Diagnostics.Debug.WriteLine(e);
+                }
+            } while (killList.Count > 0);
+            System.Diagnostics.Debug.WriteLine("Total removed = " + total);
+        }
     }
 }

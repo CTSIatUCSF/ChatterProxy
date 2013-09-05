@@ -19,6 +19,7 @@ using DevDefined.OAuth;
 using DevDefined.OAuth.Framework;
 using DevDefined.OAuth.Framework.Signing;
 using System.Security.Cryptography;
+using System.Web.Caching;
 
 namespace ChatterService.Web
 {
@@ -35,8 +36,8 @@ namespace ChatterService.Web
     public interface IChatterProxyService   
     {
         [OperationContract]
-        [WebGet(UriTemplate = "/activities?count={count}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
-        Activity[] GetActivities(int count);
+        [WebGet(UriTemplate = "/activities?count={count}&mode={mode}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
+        Activity[] GetActivities(int count, string mode);
 
         [OperationContract]
         [WebGet(UriTemplate = "/user/{personId}/activities?count={count}&mode={mode}", BodyStyle = WebMessageBodyStyle.Bare, ResponseFormat = WebMessageFormat.Json)]
@@ -83,12 +84,13 @@ namespace ChatterService.Web
 
         bool fetchingActivities = false;
         Timer activitiesFetcher;
-        List<Activity> latestList = new List<Activity>();
+        DeclumpedList latestList = new DeclumpedList();
 
         IProfilesServices profilesService = null;
 
         public ChatterProxyService()
         {
+            WriteLogToFile("Starting ChatterProxyService");
             url = ConfigurationSettings.AppSettings["SalesForceUrl"];
             userName = ConfigurationSettings.AppSettings["SalesForceUserName"];
             password = ConfigurationSettings.AppSettings["SalesForcePassword"];
@@ -100,11 +102,7 @@ namespace ChatterService.Web
             cacheCapacity = Int32.Parse(ConfigurationSettings.AppSettings["cacheCapacity"]);
             logService = Boolean.Parse(ConfigurationSettings.AppSettings["LogService"]);
             signedFetch = Boolean.Parse(ConfigurationSettings.AppSettings["SignedFetch"]);
-            Init();
-        }
 
-        private void Init()
-        {
             ServicePointManager.ServerCertificateValidationCallback += new RemoteCertificateValidationCallback(customXertificateValidation);
             profilesService = new ProfilesServices();
             getChatterSoapService();
@@ -123,13 +121,23 @@ namespace ChatterService.Web
             activitiesFetcher = new Timer(GetActivities, null, 0, cacheInterval * 1000);
         }
 
-        public Activity[] GetActivities(int count)
+        public Activity[] GetActivities(int count, string mode)
         {
             try
             {
-                lock (latestList)
+                if ("chronological".Equals(mode))
                 {
-                    return latestList.Take(count).ToArray();
+                    lock (latestList)
+                    {
+                        return latestList.Take(count).ToArray();
+                    }
+                }
+                else
+                { // declump
+                    lock (latestList)
+                    {
+                        return latestList.TakeUnclumped(count).ToArray();
+                    }
                 }
             }
             catch (Exception e)
@@ -149,11 +157,13 @@ namespace ChatterService.Web
             fetchingActivities = true;
             try
             {
-                IChatterSoapService soap = getChatterSoapService();
                 Activity lastActivity = latestList.Count > 0 ? latestList[0] : null;
+
+                ChatterSoapService soap = getChatterSoapService();
                 List<Activity> newActivities = soap.GetProfileActivities(lastActivity, cacheCapacity);
                 if (newActivities.Count > 0)
                 {
+                    WriteLogToFile("Adding " + newActivities.Count + " new activities to list");
                     lock (latestList)
                     {
                         latestList.AddRange(newActivities);
@@ -162,8 +172,14 @@ namespace ChatterService.Web
                         {
                             latestList.RemoveRange(cacheCapacity, latestList.Count - cacheCapacity);
                         }
+                        latestList.Clump();
                     }
+                    WriteLogToFile("List count is now " + latestList.Count);
                 }
+            }
+            catch (Exception e)
+            {
+                HandleError(e, url);
             }
             finally
             {
@@ -174,12 +190,11 @@ namespace ChatterService.Web
         public Activity[] GetUserActivities(string userId, string mode, int count)
         {
             try {
-                IChatterSoapService soap = getChatterSoapService();
-
                 ValidateSignature();
                 bool includeUserActivities = mode.Equals("all", StringComparison.InvariantCultureIgnoreCase);
 
-                var ssUserId = getSalesforceUserId(userId);
+                ChatterSoapService soap = getChatterSoapService();
+                var ssUserId = getSalesforceUserId(soap, userId);
                 Activity[] result = soap.GetActivities(ssUserId, Int32.Parse(userId), includeUserActivities, count).ToArray();
                 return result;
             }
@@ -215,11 +230,12 @@ namespace ChatterService.Web
 
                 string employeeId = profilesService.GetEmployeeId(nodeId);
 
-                IChatterSoapService soap = getChatterSoapService();
+                ChatterSoapService soap = getChatterSoapService();
                 string groupId = soap.CreateGroup(p["name"], descr, employeeId);
 
                 string users = p["users"];
-                if(!string.IsNullOrEmpty(users)) {
+                if (!string.IsNullOrEmpty(users))
+                {
                     string[] personList = users.Split(',');
                     List<string> employeeList = new List<string>();
                     foreach (string pId in personList)
@@ -240,8 +256,7 @@ namespace ChatterService.Web
                         soap.AddUsersToGroup(groupId, employeeList.ToArray<string>());
                     }
                 }
-
-                return new CommonResult() { Success = true, URL = url.Replace("/services", "/_ui/core/chatter/groups/GroupProfilePage?g=" + groupId)};
+                return new CommonResult() { Success = true, URL = url.Replace("/services", "/_ui/core/chatter/groups/GroupProfilePage?g=" + groupId) };
             }
             catch (Exception ex)
             {
@@ -270,8 +285,9 @@ namespace ChatterService.Web
         {
             try
             {
-                var ssOwnerId = getSalesforceUserId(ownerId);
-                var ssViewerId = getSalesforceUserId(viewerId);
+                ChatterSoapService soap = getChatterSoapService();
+                var ssOwnerId = getSalesforceUserId(soap, ownerId);
+                var ssViewerId = getSalesforceUserId(soap, viewerId);
 
                 ChatterRestService rest = getChatterRestService(accessToken);
                 ChatterResponse cresp = rest.GetFollowers(ssOwnerId);
@@ -293,6 +309,7 @@ namespace ChatterService.Web
             }
             catch (Exception ex)
             {
+                HandleError(ex, url);
                 HandleError(ex, accessToken);
                 return new CommonResult() { Success = false, ErrorMessage = ex.Message };
             }
@@ -303,8 +320,9 @@ namespace ChatterService.Web
             try
             {
                 ValidateSignature();
-                var ssOwnerId = getSalesforceUserId(ownerId);
-                var ssViewerId = getSalesforceUserId(viewerId);
+                ChatterSoapService soap = getChatterSoapService();
+                var ssOwnerId = getSalesforceUserId(soap, ownerId);
+                var ssViewerId = getSalesforceUserId(soap, viewerId);
 
                 ChatterRestService rest = getChatterRestService(accessToken);
                 ChatterResponse cresp = rest.Follow(ssViewerId, ssOwnerId);
@@ -312,6 +330,7 @@ namespace ChatterService.Web
             }
             catch (Exception ex)
             {
+                HandleError(ex, url);
                 HandleError(ex, accessToken);
                 return new CommonResult() { Success = false, ErrorMessage = ex.Message };
             }
@@ -326,8 +345,9 @@ namespace ChatterService.Web
             try
             {
                 ValidateSignature();
-                var ssOwnerId = getSalesforceUserId(ownerId);
-                var ssViewerId = getSalesforceUserId(viewerId);
+                ChatterSoapService soap = getChatterSoapService();
+                var ssOwnerId = getSalesforceUserId(soap, ownerId);
+                var ssViewerId = getSalesforceUserId(soap, viewerId);
 
                 ChatterRestService rest = getChatterRestService(accessToken);
                 ChatterResponse cresp = rest.Unfollow(ssViewerId, ssOwnerId);
@@ -335,34 +355,36 @@ namespace ChatterService.Web
             }
             catch (Exception ex)
             {
+                HandleError(ex, url);
                 HandleError(ex, accessToken);
                 return new CommonResult() { Success = false, ErrorMessage = ex.Message };
             }
         }
         #endregion
 
-        private string getSalesforceUserId(string nodeId)
+        private string getSalesforceUserId(ChatterSoapService soap, string nodeId)
         {
             Object objUserId = HttpRuntime.Cache[nodeId];
 
             if (objUserId == null)
             {
-                IChatterSoapService soap = getChatterSoapService();
                 objUserId = soap.GetUserId(profilesService.GetEmployeeId(nodeId));
                 HttpRuntime.Cache.Insert(nodeId, objUserId);
             }
             return Convert.ToString(objUserId);
         }
 
-        private IChatterSoapService getChatterSoapService()
+        private ChatterSoapService getChatterSoapService()
         {
-            IChatterSoapService soap = (IChatterSoapService)HttpRuntime.Cache[url];
+            ChatterSoapService soap = (ChatterSoapService)HttpRuntime.Cache[url];
             if (soap == null)
             {
                 lock (this)
                 {
+                    WriteLogToFile("Refreshing ChatterSoapService");
                     soap = new ChatterSoapService(url);
                     soap.Login(userName, password, token);
+                    WriteLogToFile("Success in logging into ChatterSoapService");
                     HttpRuntime.Cache.Insert(url, soap);
                 }
             }
@@ -390,7 +412,8 @@ namespace ChatterService.Web
             // remove what we think may be stale
             if (key != null && key.Trim().Length > 0)
             {
-                HttpRuntime.Cache.Remove(key);
+                // force the ChatterSoapService to logout in this situation.
+                Object o = HttpRuntime.Cache.Remove(key);
             }
             // Returning true indicates you performed your behavior. 
             return true;
@@ -431,6 +454,15 @@ namespace ChatterService.Web
             if (!signer.ValidateSignature(context, signingContext)) 
             {
                 throw new Exception("Invalid signature : " + request.UriTemplateMatch.RequestUri);
+            }
+        }
+
+        ~ChatterProxyService()
+        {
+            WriteLogToFile("Shutting down ChatterProxyService");
+            if (activitiesFetcher != null)
+            {
+                activitiesFetcher.Dispose();
             }
         }
     }
